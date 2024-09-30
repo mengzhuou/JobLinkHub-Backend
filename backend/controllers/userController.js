@@ -47,12 +47,15 @@ const verifyGoogleLogin = asyncHandler(async (req, res) => {
 
             await user.save(); // Save the new user in the database
         }
-
+        const jwtToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+            expiresIn: '30d',
+        });
         // Return user details or a token for session management
         res.status(200).json({
             success: true,
             message: 'User authenticated',
-            user
+            user,
+            token: jwtToken 
         });
     } catch (error) {
         res.status(500);
@@ -66,33 +69,48 @@ const verifyGoogleLogin = asyncHandler(async (req, res) => {
 const registerUser = asyncHandler(async (req, res) => {
     const { username, password, confirmPassword } = req.body;
 
+    // Check if passwords match
     if (password !== confirmPassword) {
         return res.status(400).json({ message: 'Passwords do not match' });
     }
 
     try {
+        // Check if a user with the same username already exists
         const existingUser = await User.findOne({ username });
         if (existingUser) {
             return res.status(400).json({ message: 'Username already exists' });
         }
 
+        // Create the new user
         const newUser = new User({ 
             username, 
             password 
         });
         await newUser.save();
 
-        res.status(201).json({ message: 'User registered successfully', user: newUser });
-    } catch (error) {
+        // Generate a JWT token for the new user
+        const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
+            expiresIn: '30d', // Adjust the expiration as needed
+        });
 
+        // Respond with the user info and the token
+        res.status(201).json({
+            message: 'User registered successfully',
+            user: newUser,
+            token // Include the JWT token in the response
+        });
+    } catch (error) {
+        // Handle duplicate key errors (if there's a unique field violation)
         if (error.code === 11000) { 
             const duplicatedField = Object.keys(error.keyValue)[0]; 
             return res.status(400).json({ message: `Duplicate key error. ${duplicatedField} already exists.` });
         }
 
+        // Handle other server errors
         res.status(500).json({ message: `Server error: ${error.message}` });
     }
 });
+
 
 
 
@@ -113,7 +131,11 @@ const loginUser = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: 'Incorrect password' });
     }
 
-    res.status(200).json({ message: 'Login successful', user });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+        expiresIn: '30d', // Adjust the expiration as necessary
+    });
+
+    res.status(200).json({ message: 'Login successful', user, token }); // Send back the token
 });
 
 

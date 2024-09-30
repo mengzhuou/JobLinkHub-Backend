@@ -1,19 +1,20 @@
 const asyncHandler = require("express-async-handler");
 const Record = require('../models/Record');
 
-// @desc Get all Records
-// @route GET /Records
+// @desc Get all records for a specific user
+// @route GET /user/:userId/records
 // @access Private
-const getRecords = asyncHandler(async (req, res) => {
-    const records = await Record.find();
+const getRecordsByUser = asyncHandler(async (req, res) => {
+    const userId = req.user._id; // Assuming the logged-in user ID is stored in req.user by authentication middleware
+    const records = await Record.find({ userId });
     res.status(200).json(records);
 });
 
 // @desc Create new Record
-// @route POST /Records
+// @route POST /records
 // @access Private
 const createRecord = asyncHandler(async (req, res) => {
-    const { company, type, jobTitle, date, receivedInterview, websiteLink, comment, click, userId } = req.body;
+    const { company, type, jobTitle, date, receivedInterview, websiteLink, comment, click } = req.body;
 
     if (!company || !type || !jobTitle || !date || receivedInterview == null || !websiteLink || click == null) {
         res.status(400);
@@ -21,65 +22,83 @@ const createRecord = asyncHandler(async (req, res) => {
     }
 
     const newRecord = new Record({
-        company, 
-        type, 
-        jobTitle, 
-        date, 
-        receivedInterview, 
-        websiteLink, 
-        comment, 
+        company,
+        type,
+        jobTitle,
+        date,
+        receivedInterview,
+        websiteLink,
+        comment,
         click,
-        userId,
+        userId: req.user._id, // Use the logged-in user's ID
     });
 
     const savedRecord = await newRecord.save();
     res.status(201).json(savedRecord);
 });
 
-// @desc Update an existing Record
-// @route PUT /Records/:id
+// @desc Update an existing record for a user
+// @route PUT /records/:id
 // @access Private
 const updateRecord = asyncHandler(async (req, res) => {
     const { id } = req.params; // Get the record ID from the URL
-    const updatedData = req.body; // Get the new data for the record
 
-    // Find the record by ID and update it with the new data
-    const updatedRecord = await Record.findByIdAndUpdate(id, updatedData, { new: true });
-
-    if (!updatedRecord) {
+    // Check if the record belongs to the logged-in user
+    const record = await Record.findOne({ _id: id, userId: req.user._id });
+    if (!record) {
         res.status(404);
-        throw new Error('Record not found');
+        throw new Error('Record not found or unauthorized');
     }
+
+    // Update the record
+    Object.assign(record, req.body);
+    const updatedRecord = await record.save();
 
     res.status(200).json(updatedRecord);
 });
 
-// @desc Delete a Record
-// @route DELETE /Records/:id
+// @desc Delete a record for a user
+// @route DELETE /records/:id
 // @access Private
 const deleteRecord = asyncHandler(async (req, res) => {
     const { id } = req.params; // Get the record ID from the URL
 
-    // Find the record by ID and delete it
-    const deletedRecord = await Record.findByIdAndDelete(id);
-
-    if (!deletedRecord) {
+    // Check if the record exists
+    const record = await Record.findById(id);
+    if (!record) {
         res.status(404);
         throw new Error('Record not found');
     }
 
+    // Delete the record
+    await Record.findByIdAndDelete(id);
+
     res.status(200).json({ message: 'Record deleted successfully' });
 });
 
-const getRecordsByUser = asyncHandler(async (req, res) => {
-    const { userId } = req.params;
-    const records = await Record.find({ userId });
 
-    if (!records) {
-        return res.status(404).json({ message: 'No records found' });
-    }
 
+
+// Optional: You can also keep a method to get all records (admin-only, for example)
+const getRecords = asyncHandler(async (req, res) => {
+    const records = await Record.find();
     res.status(200).json(records);
 });
 
-module.exports = { getRecords, createRecord, updateRecord, deleteRecord, getRecordsByUser };
+const countRecord = asyncHandler(async (req, res) => {
+    const { id } = req.params; // Get the record ID from the URL
+
+    // Find the record by its ID
+    const record = await Record.findById(id);
+    if (!record) {
+        res.status(404);
+        throw new Error('Record not found');
+    }
+
+    // Increment the click count
+    record.click += 1;
+
+    const updatedRecord = await record.save(); // Save the updated record
+    res.status(200).json(updatedRecord);
+});
+module.exports = { getRecords, createRecord, updateRecord, deleteRecord, getRecordsByUser,countRecord };
