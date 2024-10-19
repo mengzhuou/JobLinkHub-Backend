@@ -5,9 +5,19 @@ const Record = require('../models/Record');
 // @route GET /user/:userId/records
 // @access Private
 const getRecordsByUser = asyncHandler(async (req, res) => {
-    const userId = req.user._id; // Assuming the logged-in user ID is stored in req.user by authentication middleware
+    const userId = req.user._id; // Get the logged-in user's ID
     const records = await Record.find({ userId });
-    res.status(200).json(records);
+
+    // Filter applied status for each record to only include the current user's status
+    const filteredRecords = records.map(record => {
+        const userSpecificStatus = record.appliedStatus.get(userId.toString()) || false;
+        return {
+            ...record.toObject(),
+            applied: userSpecificStatus // Add a user-specific 'applied' status
+        };
+    });
+
+    res.status(200).json(filteredRecords);
 });
 
 // @desc Create new Record
@@ -101,4 +111,36 @@ const countRecord = asyncHandler(async (req, res) => {
     const updatedRecord = await record.save(); // Save the updated record
     res.status(200).json(updatedRecord);
 });
-module.exports = { getRecords, createRecord, updateRecord, deleteRecord, getRecordsByUser,countRecord };
+const updateApplicationStatus = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    const userId = req.user._id;
+
+    const record = await Record.findById(id);
+    if (!record) {
+        return res.status(404).json({ message: 'Record not found' });
+    }
+
+    record.appliedStatus.set(userId.toString(), status);
+    await record.save();
+
+    res.status(200).json(record);
+})
+
+
+const getApplicationStatus = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user._id;
+    
+    const record = await Record.findById(id);
+    if (!record) {
+        res.status(404);
+        throw new Error('Record not found');
+    }
+    
+    const appliedStatus = record.appliedStatus.get(userId.toString()) || false;
+    res.status(200).json({ appliedStatus });
+});
+
+
+module.exports = { getRecords, createRecord, updateRecord, deleteRecord, getRecordsByUser,countRecord,updateApplicationStatus,getApplicationStatus };

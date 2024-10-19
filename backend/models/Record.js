@@ -36,7 +36,11 @@ const recordSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
+    },
+    appliedStatus: {
+        type: Map, 
+        of: Boolean, 
+        default: {}, 
     }
-})
-
+});
 module.exports = mongoose.model('Record', recordSchema)

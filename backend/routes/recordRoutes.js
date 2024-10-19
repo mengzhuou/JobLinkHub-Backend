@@ -10,5 +10,6 @@ router.put('/:id', limiter, protect, recordController.updateRecord);
 router.delete('/:id', limiter, protect, recordController.deleteRecord); 
 router.get('/user/:userId', limiter, protect, recordController.getRecordsByUser); 
 router.put('/:id/click', limiter, recordController.countRecord);
-
+router.patch('/:id/status', limiter, protect, recordController.updateApplicationStatus); 
+router.get('/:id/status', limiter, protect, recordController.getApplicationStatus);
 module.exports = router;
