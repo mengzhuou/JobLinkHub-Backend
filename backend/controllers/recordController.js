@@ -5,26 +5,24 @@ const Record = require('../models/Record');
 // @route GET /user/:userId/records
 // @access Private
 const getRecordsByUser = asyncHandler(async (req, res) => {
-    const userId = req.user._id; // Get the logged-in user's ID
-    const records = await Record.find({ userId });
+    const userId = req.params.userId;
+    try {
+        // find records by userId
+        const records = await Record.find({ userId: userId }); 
+        console.log("records: ", records)
 
-    // Filter applied status for each record to only include the current user's status
-    const filteredRecords = records.map(record => {
-        const userSpecificStatus = record.appliedStatus.get(userId.toString()) || false;
-        return {
-            ...record.toObject(),
-            applied: userSpecificStatus // Add a user-specific 'applied' status
-        };
-    });
-
-    res.status(200).json(filteredRecords);
+        res.status(200).json(records);
+    } catch (error) {
+        console.error('Error fetching user records:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 // @desc Create new Record
 // @route POST /records
 // @access Private
 const createRecord = asyncHandler(async (req, res) => {
-    const { company, type, jobTitle, date, receivedInterview, websiteLink, comment, click } = req.body;
+    const { company, type, jobTitle, date, receivedInterview, websiteLink, comment, click, appliedBy } = req.body;
 
     if (!company || !type || !jobTitle || !date || receivedInterview == null || !websiteLink || click == null) {
         res.status(400);
@@ -41,6 +39,7 @@ const createRecord = asyncHandler(async (req, res) => {
         comment,
         click,
         userId: req.user._id, // Use the logged-in user's ID
+        appliedBy: [appliedBy]
     });
 
     const savedRecord = await newRecord.save();
