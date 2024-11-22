@@ -1,13 +1,30 @@
 {
   "dependencies": {
     "bcrypt": "^5.1.1",
-    "bcryptjs": "^2.4.3",
-    "dotenv": "^16.4.5",
-    "express": "^4.21.0",
-    "express-async-handler": "^1.2.0",
     "google-auth-library": "^9.14.1",
+    "multer": "^1.4.5-lts.1",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "date-fns": "^3.6.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-async-handler": "^1.2.0",
+    "express-rate-limit": "^7.4.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.6.3",
-    "multer": "^1.4.5-lts.1"
-  }
+    "mongodb": "^6.8.0",
+    "mongoose": "^8.5.3",
+    "uuid": "^10.0.0"
+  },
+  "name": "joblinkhub-backend",
+  "description": "Frontend Initial Setup\r 1. make sure your local branch is up to date\r 2. go inside \"frontend\" directory\r 3. run \"npm install\" (this is to install the dependencies from liberary)\r 4. run \"npm start\" (this is to ONLY start the frontend in port 3000)",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "cd backend && node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
