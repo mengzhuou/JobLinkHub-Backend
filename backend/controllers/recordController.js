@@ -24,7 +24,7 @@ const getRecordsByUser = asyncHandler(async (req, res) => {
 const createRecord = asyncHandler(async (req, res) => {
     const { company, type, jobTitle, date, receivedInterview, websiteLink, comment, click, appliedBy } = req.body;
 
-    if (!company || !type || !jobTitle || !date || receivedInterview == null || !websiteLink || click == null) {
+    if (!company || !type || !jobTitle || !date || !websiteLink || click == null) {
         res.status(400);
         throw new Error('Please provide all required record fields');
     }
