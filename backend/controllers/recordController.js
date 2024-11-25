@@ -148,7 +148,29 @@ const updateApplicationStatus = asyncHandler(async (req, res) => {
     res.status(200).json(record);
 });
 
+// @desc Get one record by recordId
+// @route GET /records/:recordId
+// @access Private
+const getOneRecordByRecordId = asyncHandler(async (req, res) => {
+    const { recordId } = req.params;
+
+    try {
+        // Find the record by its ID and select only the specified fields
+        const record = await Record.findById(recordId, 'company jobTitle type');
+
+        if (!record) {
+            res.status(404);
+            throw new Error('Record not found');
+        }
+
+        res.status(200).json(record);
+    } catch (error) {
+        console.error('Error fetching record:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
 
 
 
-module.exports = { getRecords, createRecord, updateRecord, deleteRecord, getRecordsByUser,countRecord,updateApplicationStatus };
+
+module.exports = { getRecords, createRecord, updateRecord, deleteRecord, getRecordsByUser,countRecord,updateApplicationStatus, getOneRecordByRecordId };

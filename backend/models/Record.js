@@ -18,8 +18,7 @@ const recordSchema = new mongoose.Schema({
         required: true
     },
     receivedInterview: {
-        type: Boolean,
-        required: true
+        type: Boolean
     },
     websiteLink: {
         type: String,
