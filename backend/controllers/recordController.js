@@ -85,13 +85,27 @@ const deleteRecord = asyncHandler(async (req, res) => {
     res.status(200).json({ message: 'Record deleted successfully' });
 });
 
-
-
-
-// Optional: You can also keep a method to get all records (admin-only, for example)
+// @desc return statement includes a 'isApplied' attribute for the current user
+// @route DELETE /records
+// @access Private
 const getRecords = asyncHandler(async (req, res) => {
-    const records = await Record.find();
-    res.status(200).json(records);
+    try {
+        const records = await Record.find();
+        const userId = req.user._id; 
+
+        // Add an 'isApplied' field to indicate if the user applied
+        const recordsWithStatus = records.map(record => {
+            return {
+                ...record._doc, // Spread the record data
+                isApplied: record.appliedBy.includes(userId)
+            };
+        });
+
+        res.status(200).json(recordsWithStatus);
+    } catch (error) {
+        console.error('Error fetching records:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 const countRecord = asyncHandler(async (req, res) => {
@@ -110,6 +124,7 @@ const countRecord = asyncHandler(async (req, res) => {
     const updatedRecord = await record.save(); // Save the updated record
     res.status(200).json(updatedRecord);
 });
+
 const updateApplicationStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
@@ -120,26 +135,20 @@ const updateApplicationStatus = asyncHandler(async (req, res) => {
         return res.status(404).json({ message: 'Record not found' });
     }
 
-    record.appliedStatus.set(userId.toString(), status);
-    await record.save();
-
-    res.status(200).json(record);
-})
-
-
-const getApplicationStatus = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    const userId = req.user._id;
-    
-    const record = await Record.findById(id);
-    if (!record) {
-        res.status(404);
-        throw new Error('Record not found');
+    if (status === 'Applied') {
+        if (!record.appliedBy.includes(userId)) {
+            record.appliedBy.push(userId); // Add the user to appliedBy array
+        }
+    } else {
+        // Optionally, remove the user if they are no longer 'Applied'
+        record.appliedBy = record.appliedBy.filter(id => id.toString() !== userId.toString());
     }
-    
-    const appliedStatus = record.appliedStatus.get(userId.toString()) || false;
-    res.status(200).json({ appliedStatus });
+
+    await record.save();
+    res.status(200).json(record);
 });
 
 
-module.exports = { getRecords, createRecord, updateRecord, deleteRecord, getRecordsByUser,countRecord,updateApplicationStatus,getApplicationStatus };
+
+
+module.exports = { getRecords, createRecord, updateRecord, deleteRecord, getRecordsByUser,countRecord,updateApplicationStatus };
