@@ -16,51 +16,46 @@ const getUsers = asyncHandler(async (req, res) => {
 // @access Public
 const verifyGoogleLogin = asyncHandler(async (req, res) => {
     const { token } = req.body; // Extract the token from the request body
+
     if (!token) {
         res.status(400);
         throw new Error('No token provided');
     }
 
     try {
-        const decodedToken = jwt.decode(token);
+        // Decode the token to get user information (sub, name, email, etc.)
+        const decodedToken = jwt.decode(token); 
 
         if (!decodedToken) {
             res.status(400);
             throw new Error('Invalid token');
         }
 
-        const { sub, name, email } = decodedToken;
+        // Get relevant user info from the token (sub = googleId)
+        const { sub, name, email } = decodedToken; 
 
+        // Check if the user already exists in the database
         let user = await User.findOne({ googleId: sub });
 
         if (!user) {
-            let username = name?.replace(/\s+/g, '').toLowerCase() || email?.split('@')[0];
-
-            // Check if the username is already taken
-            const isUsernameTaken = await User.findOne({ username });
-            if (isUsernameTaken) {
-                username = `${username}_${Date.now()}`; // Make the username unique
-            }
-
+            // If the user doesn't exist, create a new user
             user = new User({
                 googleId: sub,
                 name,
-                email,
-                username, // Add the generated username
+                email
             });
 
-            await user.save();
+            await user.save(); // Save the new user in the database
         }
-
         const jwtToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
             expiresIn: '30d',
         });
-
+        // Return user details or a token for session management
         res.status(200).json({
             success: true,
             message: 'User authenticated',
             user,
-            token: jwtToken,
+            token: jwtToken 
         });
     } catch (error) {
         res.status(500);
@@ -126,7 +121,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const { username, password } = req.body;
 
     const user = await User.findOne({ username });
-    
+
     if (!user) {
         return res.status(400).json({ message: 'Username does not exist' });
     }

@@ -181,7 +181,6 @@ const getRecordById = asyncHandler(async (req, res) => {
         res.status(404);
         throw new Error('Record not found or unauthorized');
     }
-
     res.status(200).json(record);
 });
 
