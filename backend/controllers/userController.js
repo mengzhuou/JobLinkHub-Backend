@@ -15,7 +15,7 @@ const getUsers = asyncHandler(async (req, res) => {
 // @route POST /auth/google-login
 // @access Public
 const verifyGoogleLogin = asyncHandler(async (req, res) => {
-    const { token } = req.body; // Extract the token from the request body
+    const { token } = req.body;
 
     if (!token) {
         res.status(400);
@@ -23,39 +23,45 @@ const verifyGoogleLogin = asyncHandler(async (req, res) => {
     }
 
     try {
-        // Decode the token to get user information (sub, name, email, etc.)
-        const decodedToken = jwt.decode(token); 
+        const decodedToken = jwt.decode(token);
 
         if (!decodedToken) {
             res.status(400);
             throw new Error('Invalid token');
         }
 
-        // Get relevant user info from the token (sub = googleId)
-        const { sub, name, email } = decodedToken; 
+        const { sub, name, email } = decodedToken;
 
-        // Check if the user already exists in the database
         let user = await User.findOne({ googleId: sub });
 
         if (!user) {
-            // If the user doesn't exist, create a new user
+            let username = name?.replace(/\s+/g, '').toLowerCase() || email?.split('@')[0];
+
+            // Check if the username is already taken
+            const isUsernameTaken = await User.findOne({ username });
+            if (isUsernameTaken) {
+                username = `${username}_${Date.now()}`; // Make the username unique
+            }
+
             user = new User({
                 googleId: sub,
                 name,
-                email
+                email,
+                username, // Add the generated username
             });
 
-            await user.save(); // Save the new user in the database
+            await user.save();
         }
+
         const jwtToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
             expiresIn: '30d',
         });
-        // Return user details or a token for session management
+
         res.status(200).json({
             success: true,
             message: 'User authenticated',
             user,
-            token: jwtToken 
+            token: jwtToken,
         });
     } catch (error) {
         res.status(500);
