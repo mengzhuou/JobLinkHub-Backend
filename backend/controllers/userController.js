@@ -15,7 +15,8 @@ const getUsers = asyncHandler(async (req, res) => {
 // @route POST /auth/google-login
 // @access Public
 const verifyGoogleLogin = asyncHandler(async (req, res) => {
-    const { token } = req.body; // Extract the token from the request body
+    const { token } = req.body;
+
     if (!token) {
         res.status(400);
         throw new Error('No token provided');
