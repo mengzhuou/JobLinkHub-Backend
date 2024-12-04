@@ -10,6 +10,5 @@ router.post('/', limiter, protect, recordController.createRecord);
 router.put('/:id', limiter, protect, recordController.updateRecord); 
 router.delete('/:id', limiter, protect, recordController.deleteRecord); 
 router.put('/:id/click', limiter, recordController.countRecord);
-// router.get('/:id/status', limiter, protect, recordController.getApplicationStatus);
 router.get('/:id', limiter, protect, recordController.getRecordById);
 module.exports = router;
