@@ -5,6 +5,7 @@ const recordSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    // employment type
     type: {
         type: String,
         required: true
@@ -13,12 +14,9 @@ const recordSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    date: {
+    appliedDate: {
         type: Date,
         required: true
-    },
-    receivedInterview: {
-        type: Boolean
     },
     websiteLink: {
         type: String,
@@ -36,10 +34,11 @@ const recordSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    appliedBy: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    }]
+    receivedInterview: {
+        type: Boolean
+    },
+    receivedOffer: {
+        type: Boolean
+    }
 });
 module.exports = mongoose.model('Record', recordSchema)

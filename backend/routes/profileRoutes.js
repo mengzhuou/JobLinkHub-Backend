@@ -4,10 +4,8 @@ const profileController = require("../controllers/profileController");
 const limiter = require('../middleware/rateLimiter');
 const { protect } = require('../middleware/authMiddleware');  
 
-// Route to get a profile by userId
 router.get('/:userId', limiter, protect, profileController.getProfileByUserId);
-
-// Route to update a profile by adding a recordId
-router.put('/:userId', limiter, protect, profileController.updateProfileByUserId);
+router.put('/:userId/new-record', limiter, protect, profileController.updateProfileByNewRecord);
+router.put('/:userId/existing-record', limiter, protect, profileController.updateProfileByExistingRecord);
 
 module.exports = router;
