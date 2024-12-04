@@ -5,24 +5,26 @@ const Record = require('../models/Record');
 // @route GET /user/:userId/records
 // @access Private
 const getRecordsByUser = asyncHandler(async (req, res) => {
-    const userId = req.params.userId;
-    try {
-        // find records by userId
-        const records = await Record.find({ userId: userId }); 
-        console.log("records: ", records)
+    const userId = req.user._id; // Get the logged-in user's ID
+    const records = await Record.find({ userId });
 
-        res.status(200).json(records);
-    } catch (error) {
-        console.error('Error fetching user records:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
+    // Filter applied status for each record to only include the current user's status
+    const filteredRecords = records.map(record => {
+        const userSpecificStatus = record.appliedStatus.get(userId.toString()) || false;
+        return {
+            ...record.toObject(),
+            applied: userSpecificStatus // Add a user-specific 'applied' status
+        };
+    });
+
+    res.status(200).json(filteredRecords);
 });
 
 // @desc Create new Record
 // @route POST /records
 // @access Private
 const createRecord = asyncHandler(async (req, res) => {
-    const { company, type, jobTitle, date, receivedInterview, websiteLink, comment, click, appliedBy } = req.body;
+    const { company, type, jobTitle, date, receivedInterview, websiteLink, comment, click } = req.body;
 
     if (!company || !type || !jobTitle || !date || receivedInterview == null || !websiteLink || click == null) {
         res.status(400);
@@ -39,7 +41,6 @@ const createRecord = asyncHandler(async (req, res) => {
         comment,
         click,
         userId: req.user._id, // Use the logged-in user's ID
-        appliedBy: [appliedBy]
     });
 
     const savedRecord = await newRecord.save();
@@ -85,27 +86,13 @@ const deleteRecord = asyncHandler(async (req, res) => {
     res.status(200).json({ message: 'Record deleted successfully' });
 });
 
-// @desc return statement includes a 'isApplied' attribute for the current user
-// @route DELETE /records
-// @access Private
+
+
+
+// Optional: You can also keep a method to get all records (admin-only, for example)
 const getRecords = asyncHandler(async (req, res) => {
-    try {
-        const records = await Record.find();
-        const userId = req.user._id; 
-
-        // Add an 'isApplied' field to indicate if the user applied
-        const recordsWithStatus = records.map(record => {
-            return {
-                ...record._doc, // Spread the record data
-                isApplied: record.appliedBy.includes(userId)
-            };
-        });
-
-        res.status(200).json(recordsWithStatus);
-    } catch (error) {
-        console.error('Error fetching records:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
+    const records = await Record.find();
+    res.status(200).json(records);
 });
 
 const countRecord = asyncHandler(async (req, res) => {
@@ -124,7 +111,6 @@ const countRecord = asyncHandler(async (req, res) => {
     const updatedRecord = await record.save(); // Save the updated record
     res.status(200).json(updatedRecord);
 });
-
 const updateApplicationStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
@@ -135,31 +121,35 @@ const updateApplicationStatus = asyncHandler(async (req, res) => {
         return res.status(404).json({ message: 'Record not found' });
     }
 
-    if (status === 'Applied') {
-        if (!record.appliedBy.includes(userId)) {
-            record.appliedBy.push(userId); // Add the user to appliedBy array
-        }
-    } else {
-        // Optionally, remove the user if they are no longer 'Applied'
-        record.appliedBy = record.appliedBy.filter(id => id.toString() !== userId.toString());
+    record.appliedStatus.set(userId.toString(), status);
+    await record.save();
+
+    res.status(200).json(record);
+})
+
+
+const getApplicationStatus = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    const record = await Record.findById(id);
+    if (!record) {
+        res.status(404);
+        throw new Error('Record not found');
     }
 
-    await record.save();
-    res.status(200).json(record);
+    const appliedStatus = record.appliedStatus.get(userId.toString()) || false;
+    res.status(200).json({ appliedStatus });
 });
-
-
 
 const getRecordById = asyncHandler(async (req, res) => {
     const { id } = req.params; // Get the record ID from the URL
     const userId = req.user._id; // Get the logged-in user's ID
-
     const record = await Record.findOne({ _id: id, userId }); // Ensure the record belongs to the user
     if (!record) {
         res.status(404);
         throw new Error('Record not found or unauthorized');
     }
-
     res.status(200).json(record);
 });
 
