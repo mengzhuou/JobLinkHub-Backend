@@ -5,28 +5,33 @@ const userSchema = new mongoose.Schema({
     googleId: {
         type: String,
         unique: true,
-        sparse: true 
+        sparse: true, // Google login users may not have a googleId, so this field can be null
     },
     name: {
-        type: String
+        type: String, // Provided during Google login or registration
+        required: false,
     },
     email: {
         type: String,
-        unique: true,
-        sparse: true 
+        unique: true, // Ensures email uniqueness
+        sparse: true, // Google users might not have an email, but local users require one
     },
     username: {
         type: String,
-        unique: true, 
-        required: true 
+        unique: true, // Local registered users require a unique username
+        required: function () {
+            return !this.googleId; // If the user is not using Google login, username is required
+        },
     },
     password: {
         type: String,
-        required: true 
-    }
+        required: function () {
+            return !this.googleId; // If the user is not using Google login, password is required
+        },
+    },
 });
 
-// Password hashing before saving
+// Hash the password before saving it to the database
 userSchema.pre('save', async function (next) {
     if (!this.isModified('password')) {
         return next();
@@ -37,7 +42,7 @@ userSchema.pre('save', async function (next) {
     next();
 });
 
-// Password comparison
+// Add a method to compare the entered password with the hashed password
 userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
