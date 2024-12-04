@@ -37,10 +37,10 @@ const recordSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    appliedStatus: {
-        type: Map, 
-        of: Boolean, 
-        default: {}, 
-    }
+    appliedBy: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    }]
 });
 module.exports = mongoose.model('Record', recordSchema)
