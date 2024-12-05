@@ -48,8 +48,6 @@ const createRecord = asyncHandler(async (req, res) => {
 
         res.status(201).json({
             message: 'Record created and profile updated successfully',
-            record: savedRecord,
-            profile
         });
     } catch (error) {
         console.error('Error creating record and updating profile:', error);
@@ -124,9 +122,6 @@ const getRecords = asyncHandler(async (req, res) => {
                 isApplied: appliedRecord.includes(record._id.toString())
             };
         });
-        console.log("recordsWithStatus: ", recordsWithStatus)
-
-        
 
         res.status(200).json(recordsWithStatus);
     } catch (error) {

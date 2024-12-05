@@ -5,7 +5,6 @@ const limiter = require('../middleware/rateLimiter');
 const { protect } = require('../middleware/authMiddleware');  
 
 router.get('/:userId', limiter, protect, profileController.getProfileByUserId);
-router.put('/:userId/new-record', limiter, protect, profileController.updateProfileByNewRecord);
 router.put('/:userId/existing-record', limiter, protect, profileController.updateProfileByExistingRecord);
 
 module.exports = router;

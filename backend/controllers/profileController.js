@@ -65,56 +65,9 @@ const updateProfileByExistingRecord = asyncHandler(async (req, res) => {
     }
 });
 
-// @desc Create a new record and add it to the user's profile
-// @route POST /profiles/:userId/createRecord
-// @access Private
-const updateProfileByNewRecord = asyncHandler(async (req, res) => {
-    const { userId } = req.params;
-    const { company, type, jobTitle, appliedDate, receivedInterview, websiteLink, comment, click, receivedOffer } = req.body;
-
-    if (!company || !type || !jobTitle || !appliedDate || receivedInterview == null || !websiteLink || click == null) {
-        res.status(400);
-        throw new Error('All record fields are required');
-    }
-
-    try {
-        // Create a new record
-        const newRecord = new Record({
-            company,
-            type,
-            jobTitle,
-            appliedDate,
-            receivedInterview,
-            websiteLink,
-            comment,
-            click,
-            userId,
-            receivedOffer
-        });
-
-        const savedRecord = await newRecord.save();
-
-        // Find the user's profile or create one if it doesn't exist
-        let profile = await Profile.findOneAndUpdate(
-            { userId },
-            { $setOnInsert: { userId, appliedRecords: [] } },
-            { new: true, upsert: true } // Return the updated or newly created profile
-        );
-
-        // Add the new record's ID to the user's profile
-        profile.appliedRecords.push(savedRecord._id);
-        await profile.save();
-
-        res.status(201).json({
-            message: 'Record created and added to profile successfully',
-            profile,
-            record: savedRecord
-        });
-    } catch (error) {
-        console.error('Error creating record on profile:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
 
 
-module.exports = { getProfileByUserId, updateProfileByExistingRecord, updateProfileByNewRecord };
+module.exports = { 
+    getProfileByUserId, 
+    updateProfileByExistingRecord, 
+};
