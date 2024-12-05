@@ -175,4 +175,64 @@ const getOneRecordByRecordId = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { getRecords, createRecord, updateRecord, deleteRecord, countRecord, getOneRecordByRecordId };
+// @desc POST one duplicated record by existing recordId
+// @route POST /records/duplicate/:recordId
+// @access Private
+const createRecordByRecordId = asyncHandler(async (req, res) => {
+    const { recordId } = req.params;
+
+    try {
+        // Fetch the existing record by ID
+        const existingRecord = await Record.findById(recordId);
+
+        if (!existingRecord) {
+            res.status(404);
+            throw new Error('Record not found');
+        }
+
+        // Create a new record using the data from the existing record
+        const newRecord = new Record({
+            company: existingRecord.company,
+            type: existingRecord.type,
+            jobTitle: existingRecord.jobTitle,
+            appliedDate: existingRecord.appliedDate,
+            receivedInterview: existingRecord.receivedInterview,
+            websiteLink: existingRecord.websiteLink,
+            comment: existingRecord.comment,
+            click: 0, // Reset click count for the new record
+            userId: req.user._id, // Associate the new record with the logged-in user
+            receivedOffer: existingRecord.receivedOffer,
+        });
+
+        const savedRecord = await newRecord.save();
+
+        // Find or create the user's profile and update it with the new record ID
+        let profile = await Profile.findOne({ userId: req.user._id });
+
+        if (!profile) {
+            // Create a new profile if it doesn't exist
+            profile = new Profile({
+                userId: req.user._id,
+                appliedRecords: [],
+            });
+        }
+
+        // Add the new record ID to the profile if not already present
+        if (!profile.appliedRecords.includes(savedRecord._id)) {
+            profile.appliedRecords.push(savedRecord._id);
+            await profile.save();
+        }
+
+        res.status(201).json({
+            message: 'Record created successfully based on existing record',
+            newRecordId: savedRecord._id
+        });
+    } catch (error) {
+        console.error('Error creating record by recordId:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
+
+module.exports = { getRecords, createRecord, updateRecord, deleteRecord, countRecord, getOneRecordByRecordId, createRecordByRecordId };
