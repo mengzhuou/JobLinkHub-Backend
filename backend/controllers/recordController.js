@@ -97,7 +97,7 @@ const deleteRecord = asyncHandler(async (req, res) => {
     res.status(200).json({ message: 'Record deleted successfully' });
 });
 
-// @desc return statement includes a 'isApplied' attribute for the current user
+// @desc for main record table: return statement includes a 'isApplied' attribute for the current user
 // @route GET /records
 // @access Private
 const getRecords = asyncHandler(async (req, res) => {
@@ -124,6 +124,9 @@ const getRecords = asyncHandler(async (req, res) => {
                 isApplied: appliedRecord.includes(record._id.toString())
             };
         });
+        console.log("recordsWithStatus: ", recordsWithStatus)
+
+        
 
         res.status(200).json(recordsWithStatus);
     } catch (error) {
@@ -158,7 +161,7 @@ const getOneRecordByRecordId = asyncHandler(async (req, res) => {
 
     try {
         // Find the record by its ID and select only the specified fields
-        const record = await Record.findById(recordId, 'company jobTitle type');
+        const record = await Record.findById(recordId);
 
         if (!record) {
             res.status(404);
@@ -172,16 +175,4 @@ const getOneRecordByRecordId = asyncHandler(async (req, res) => {
     }
 });
 
-
-const getRecordById = asyncHandler(async (req, res) => {
-    const { id } = req.params; // Get the record ID from the URL
-    const userId = req.user._id; // Get the logged-in user's ID
-    const record = await Record.findOne({ _id: id, userId }); // Ensure the record belongs to the user
-    if (!record) {
-        res.status(404);
-        throw new Error('Record not found or unauthorized');
-    }
-    res.status(200).json(record);
-});
-
-module.exports = { getRecords, createRecord, updateRecord, deleteRecord,countRecord,getRecordById, getOneRecordByRecordId };
+module.exports = { getRecords, createRecord, updateRecord, deleteRecord, countRecord, getOneRecordByRecordId };
